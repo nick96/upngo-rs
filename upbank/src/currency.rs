@@ -8,3 +8,9 @@ pub struct Money {
     pub value: String,
     pub value_in_base_units: i64,
 }
+
+impl ToString for Money {
+    fn to_string(&self) -> String {
+        format!("{} {}", self.value, self.currency_code)
+    }
+}

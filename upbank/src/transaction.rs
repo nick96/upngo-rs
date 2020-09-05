@@ -2,6 +2,7 @@ use crate::{currency, error, resource, response};
 use log::*;
 use serde::Deserialize;
 use url::Url;
+use strum_macros::Display;
 
 pub struct TransactionClient {
     client: reqwest::blocking::Client,
@@ -9,7 +10,7 @@ pub struct TransactionClient {
     token: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Display)]
 pub enum Status {
     HELD,
     SETTLED,

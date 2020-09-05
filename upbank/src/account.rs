@@ -2,6 +2,7 @@ use crate::{currency, error, resource, response, transaction};
 use log::*;
 use serde::Deserialize;
 use url::Url;
+use strum_macros::Display;
 
 pub struct AccountClient {
     client: reqwest::blocking::Client,
@@ -9,7 +10,7 @@ pub struct AccountClient {
     token: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Display)]
 pub enum AccountType {
     SAVER,
     TRANSACTIONAL,

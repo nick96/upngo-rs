@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::option::Option;
+use thiserror::{Error};
 
 #[derive(Deserialize, Debug)]
 pub struct Source {
@@ -48,4 +49,23 @@ impl std::fmt::Display for Error {
     }
 }
 
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+#[derive(Error, Debug)]
+pub enum ClientError {
+    /// Error that occurs because of something I screwed up.
+    #[error("The developer is a nuff-nuff: {0}")]
+    InternalError(String),
+
+    /// Error in the UpBank response (use or them).
+    #[error("{0}")]
+    UpBankError(Error),
+
+    /// Error due to parsing or something like that.
+    #[error("Request failed: {0}")]
+    RequestError(#[from] reqwest::Error),
+
+    /// Error working with URLs.
+    #[error("Failed to parse URL: {0}")]
+    UrlError(#[from] url::ParseError),
+}
+
+pub type Result<T> = std::result::Result<T, ClientError>;

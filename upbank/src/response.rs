@@ -3,15 +3,15 @@ use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize, Debug)]
 pub struct Links {
-    prev: Option<String>,
-    next: Option<String>,
+    pub prev: Option<String>,
+    pub next: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct SuccessfulResponse<T> {
     #[serde(bound(deserialize = "T: Deserialize<'de>"))]
-    data: T,
-    links: Option<Links>,
+    pub data: T,
+    pub links: Option<Links>,
 }
 
 #[derive(Debug)]
