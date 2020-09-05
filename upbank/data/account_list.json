@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "type": "accounts",
+      "id": "e0746933-045d-4c1b-a0b2-938d3e587583",
+      "attributes": {
+        "displayName": "Up Account",
+        "accountType": "TRANSACTIONAL",
+        "balance": {
+          "currencyCode": "AUD",
+          "value": "1.00",
+          "valueInBaseUnits": 100
+        },
+        "createdAt": "2020-09-04T13:37:07+10:00"
+      },
+      "relationships": {
+        "transactions": {
+          "links": {
+            "related": "https://api.up.com.au/api/v1/accounts/e0746933-045d-4c1b-a0b2-938d3e587583/transactions"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/accounts/e0746933-045d-4c1b-a0b2-938d3e587583"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": "https://api.up.com.au/api/v1/accounts?page%5Bafter%5D=WyIyMDIwLTA5LTA0VDAzOjM3OjA3Ljg3MDU4MTAwMFoiLCJlMDc0NjkzMy0wNDVkLTRjMWItYTBiMi05MzhkM2U1ODc1ODMiXQ%3D%3D&page%5Bsize%5D=1"
+  }
+}

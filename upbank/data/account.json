@@ -1,0 +1,26 @@
+{
+  "data": {
+    "type": "accounts",
+    "id": "66938e72-9d80-4b91-99bf-281ce20b161a",
+    "attributes": {
+      "displayName": "🐷 Savings",
+      "accountType": "SAVER",
+      "balance": {
+        "currencyCode": "AUD",
+        "value": "125.36",
+        "valueInBaseUnits": 12536
+      },
+      "createdAt": "2020-09-04T13:37:09+10:00"
+    },
+    "relationships": {
+      "transactions": {
+        "links": {
+          "related": "https://api.up.com.au/api/v1/accounts/66938e72-9d80-4b91-99bf-281ce20b161a/transactions"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/accounts/66938e72-9d80-4b91-99bf-281ce20b161a"
+    }
+  }
+}

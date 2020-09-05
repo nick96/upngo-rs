@@ -1,9 +1,17 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ResourceType {
+    TRANSACTIONS,
+    ACCOUNTS,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Resource<A, R> {
     #[serde(rename = "type")]
-    pub resource_type: String,
+    pub resource_type: ResourceType,
     pub id: String,
     #[serde(bound(deserialize = "A: Deserialize<'de>"))]
     pub attributes: A,

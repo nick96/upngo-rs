@@ -1,4 +1,4 @@
-use crate::{error, response::Response};
+use crate::error;
 use log::*;
 use serde::Deserialize;
 use url::Url;

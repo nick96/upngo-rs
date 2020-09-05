@@ -1,4 +1,4 @@
-use crate::{error, iso4217, resource, response};
+use crate::{currency, error, resource, response, transaction};
 use log::*;
 use serde::Deserialize;
 use url::Url;
@@ -17,32 +17,27 @@ pub enum AccountType {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Money {
-    pub currency_code: iso4217::CurrencyCode,
-    pub value: String,
-    pub value_in_base_units: i64,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Attributes {
     pub display_name: String,
     pub account_type: AccountType,
-    pub balance: Money,
+    pub balance: currency::Money,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct RelatedLinks {
     pub related: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionLinks {
     pub links: RelatedLinks,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Relationships {
     pub transactions: TransactionLinks,
 }
@@ -84,5 +79,54 @@ impl AccountClient {
             .json::<response::Response<Account>>()?;
         trace!("Get accounts responded with {:?}", resp);
         Ok(resp)
+    }
+
+    pub fn transactions(
+        &self,
+        id: String,
+    ) -> error::Result<response::Response<Vec<transaction::Transaction>>> {
+        // Append "/" to the ID so that appending "transactions" after doesn't
+        // stomp it.
+        let id_part = id + "/";
+        let url = self.base_url.join(&id_part)?.join("transactions")?;
+        debug!(
+            "Sending account transactions get request to {}",
+            url.to_string()
+        );
+        let resp = self
+            .client
+            .get(url)
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<Vec<transaction::Transaction>>>()?;
+        trace!("Get account transactions responded with {:?}", resp);
+        Ok(resp)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Account;
+    use crate::response::SuccessfulResponse;
+    use serde_json;
+
+    #[test]
+    fn test_account_de() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let mut path = std::path::PathBuf::from(manifest_dir);
+        path.push("data");
+        path.push("account.json");
+        let contents = std::fs::read_to_string(path).unwrap();
+        let _ = serde_json::from_str::<SuccessfulResponse<Account>>(&contents).unwrap();
+    }
+
+    #[test]
+    fn test_accounts_de() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let mut path = std::path::PathBuf::from(manifest_dir);
+        path.push("data");
+        path.push("account_list.json");
+        let contents = std::fs::read_to_string(path).unwrap();
+        let _ = serde_json::from_str::<SuccessfulResponse<Vec<Account>>>(&contents).unwrap();
     }
 }

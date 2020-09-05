@@ -1,0 +1,67 @@
+{
+  "data": {
+    "type": "transactions",
+    "id": "75d3cffa-c517-4e64-8e41-acd63156c8b0",
+    "attributes": {
+      "status": "SETTLED",
+      "rawText": "WARUNG BEBEK, UBUD INDONES",
+      "description": "Warung Bebek Bengil",
+      "message": null,
+      "holdInfo": {
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-107.92",
+          "valueInBaseUnits": -10792
+        },
+        "foreignAmount": null
+      },
+      "roundUp": {
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-0.08",
+          "valueInBaseUnits": -8
+        },
+        "boostPortion": null
+      },
+      "cashback": null,
+      "amount": {
+        "currencyCode": "AUD",
+        "value": "-107.92",
+        "valueInBaseUnits": -10792
+      },
+      "foreignAmount": {
+        "currencyCode": "IDR",
+        "value": "-1053698.77",
+        "valueInBaseUnits": -105369877
+      },
+      "settledAt": "2020-08-30T11:34:29+10:00",
+      "createdAt": "2020-09-01T04:00:00+10:00"
+    },
+    "relationships": {
+      "account": {
+        "data": {
+          "type": "accounts",
+          "id": "139ed96d-9697-4c4a-b221-3d0f72d656cd"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/accounts/139ed96d-9697-4c4a-b221-3d0f72d656cd"
+        }
+      },
+      "category": {
+        "data": null
+      },
+      "parentCategory": {
+        "data": null
+      },
+      "tags": {
+        "data": [],
+        "links": {
+          "self": "https://api.up.com.au/api/v1/transactions/75d3cffa-c517-4e64-8e41-acd63156c8b0/relationships/tags"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/transactions/75d3cffa-c517-4e64-8e41-acd63156c8b0"
+    }
+  }
+}

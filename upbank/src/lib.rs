@@ -2,11 +2,16 @@ use url::Url;
 
 pub mod response;
 
+// Resources
 pub mod account;
+pub mod transaction;
+pub mod util;
+
+// Utilities that we share between modules but don't expose.
+mod currency;
 mod error;
 mod iso4217;
 mod resource;
-pub mod util;
 
 pub fn default_base_url() -> Url {
     // Ending the URL in a slash is important because otherwise the v1 gets
@@ -21,6 +26,7 @@ pub struct Client {
 
     pub util: util::Util,
     pub account: account::AccountClient,
+    pub transaction: transaction::TransactionClient,
 }
 
 impl Client {
@@ -39,6 +45,12 @@ impl Client {
             account: account::AccountClient::new(
                 base_url.join("accounts/").unwrap_or_else(|_| {
                     panic!("Couldn't add 'accounts/' to base URL {}", base_url)
+                }),
+                token.clone(),
+            ),
+            transaction: transaction::TransactionClient::new(
+                base_url.join("transactions/").unwrap_or_else(|_| {
+                    panic!("Couldn't add 'transactions/' to base URL {}", base_url)
                 }),
                 token,
             ),
