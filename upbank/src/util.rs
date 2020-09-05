@@ -21,6 +21,13 @@ pub struct Ping {
     pub meta: Meta,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum PingResponse {
+    Ok(Ping),
+    Err(error::Error),
+}
+
 impl Util {
     pub fn new(base_url: Url, token: String) -> Self {
         Util {
@@ -30,7 +37,7 @@ impl Util {
         }
     }
 
-    pub fn ping(&self) -> error::Result<Response<Ping>> {
+    pub fn ping(&self) -> error::Result<PingResponse> {
         let ping_url = self
             .base_url
             .join("ping")
@@ -41,7 +48,8 @@ impl Util {
             .get(ping_url)
             .bearer_auth(&self.token)
             .send()?
-            .json::<Response<Ping>>()?;
+            .json::<PingResponse>()?;
+        trace!("Ping responded with {:?}", resp);
         Ok(resp)
     }
 }

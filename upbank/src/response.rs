@@ -1,10 +1,23 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use crate::error;
 
 #[derive(Deserialize, Debug)]
+pub struct Links {
+    prev: Option<String>,
+    next: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SuccessfulResponse<T> {
+    #[serde(bound(deserialize = "T: Deserialize<'de>"))]
+    data: T,
+    links: Option<Links>
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Response<T> {
-    Ok(T),
+    Ok(SuccessfulResponse<T>),
     Err(error::Error),
 }
 

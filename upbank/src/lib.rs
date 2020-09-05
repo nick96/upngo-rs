@@ -2,8 +2,11 @@ use url::Url;
 
 pub mod response;
 
+pub mod account;
 mod error;
-mod util;
+mod iso4217;
+mod resource;
+pub mod util;
 
 pub fn default_base_url() -> Url {
     // Ending the URL in a slash is important because otherwise the v1 gets
@@ -17,6 +20,7 @@ pub struct Client {
     token: String,
 
     pub util: util::Util,
+    pub account: account::AccountClient,
 }
 
 impl Client {
@@ -29,7 +33,13 @@ impl Client {
                 base_url
                     // Has to end in a slash otherwise it gets stomped by subsequent joins
                     .join("util/")
-                    .unwrap_or_else(|_| panic!("Couldn't add 'util' to base URL {}", base_url)),
+                    .unwrap_or_else(|_| panic!("Couldn't add 'util/' to base URL {}", base_url)),
+                token.clone(),
+            ),
+            account: account::AccountClient::new(
+                base_url.join("accounts/").unwrap_or_else(|_| {
+                    panic!("Couldn't add 'accounts/' to base URL {}", base_url)
+                }),
                 token,
             ),
         }
