@@ -1,9 +1,8 @@
 // Tests for the util client.
 mod shared;
 
-use shared::*;
+use shared::{get_bad_client, get_client, init_logger};
 use upbank::util::PingResponse;
-
 
 #[test]
 fn test_ping_ok() {
