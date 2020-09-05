@@ -23,7 +23,8 @@ fn get_currency_codes() -> Vec<String> {
 fn main() {
     // println!("cargo:rerun-if-changed=data/rfc4217.xml");
     let mut scope = Scope::new();
-    let cc_enum = scope.new_enum("CurrencyCode").vis("pub").derive("Debug");
+    scope.import("serde", "Deserialize");
+    let cc_enum = scope.new_enum("CurrencyCode").vis("pub").derive("Debug").derive("Deserialize");
     let currency_codes = get_currency_codes();
     for currency_code in &currency_codes {
         let variant = Variant::new(&currency_code);
@@ -45,7 +46,7 @@ fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let mut output_file = std::path::PathBuf::from(manifest_dir);
     output_file.push("src");
-    output_file.push("rfc4217.rs");
+    output_file.push("iso4217.rs");
     let mut fh = std::fs::File::create(output_file).unwrap();
     fh.write_all(scope.to_string().as_bytes()).unwrap();
 }
