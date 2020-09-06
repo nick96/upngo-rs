@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Context, Result};
 use argh::FromArgs;
-use prettytable::{table, row, cell};
+use log::*;
+use prettytable::{cell, row, table, Table};
 use upbank::Client;
 use url::Url;
-use log::*;
 
 /// UpBank CLI.
 #[derive(FromArgs)]
@@ -48,12 +48,23 @@ enum ListResourceCommand {
 /// List transactions.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "transactions")]
-struct ListTransactions {}
+struct ListTransactions {
+    /// max number of transactions to list.
+    #[argh(option, short = 'n')]
+    max_count: Option<u32>,
+    /// filter transactions by status.
+    #[argh(option, short = 's')]
+    status: Option<upbank::transaction::Status>,
+}
 
 /// List accounts.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "accounts")]
-struct ListAccounts {}
+struct ListAccounts {
+    /// max number of accounts to list.
+    #[argh(option, short = 'n')]
+    max_count: Option<u32>,
+}
 
 /// List categories.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -92,7 +103,11 @@ enum GetResourceCommand {
 /// Get a transactions.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "transactions")]
-struct GetTransaction {}
+struct GetTransaction {
+    /// id of the transaction to get.
+    #[argh(positional)]
+    id: String,
+}
 
 /// Get am account..
 #[derive(FromArgs, PartialEq, Debug)]
@@ -165,9 +180,9 @@ fn main() -> Result<()> {
         None => {
             debug!("Retrieving UpBank token from UPBANK_TOKEN environment variable");
             std::env::var("UPBANK_TOKEN").expect(
-            "Failed to retrieve UpBank token from flag or UPBANK_TOKEN environment variable",
-        )
-    },
+                "Failed to retrieve UpBank token from flag or UPBANK_TOKEN environment variable",
+            )
+        }
     };
 
     let client = Client::new(url, token);
@@ -222,7 +237,34 @@ fn run_get_account(client: Client, account: GetAccount) -> Result<()> {
 }
 
 fn run_get_transaction(client: Client, transaction: GetTransaction) -> Result<()> {
-    todo!()
+    let resp = client
+        .transaction
+        .get(transaction.id.clone())
+        .with_context(|| format!("Failed to get transaction with ID {}", transaction.id))?;
+    match resp {
+        upbank::response::Response::Ok(transac) => {
+            let attrs = transac.data.attributes;
+            let table = table!(
+                ["Description", "Amount", "Status", "Created", "Settled"],
+                [
+                    attrs.description,
+                    attrs.amount,
+                    attrs.status,
+                    attrs.created_at,
+                    attrs
+                        .settled_at
+                        .map_or_else(|| "N/A".to_string(), |d| d.to_string(),),
+                ]
+            );
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!(
+            "Failed to get transaction with ID {}:\n{}",
+            &transaction.id,
+            e
+        )),
+    }
 }
 
 fn run_get_webhook(client: Client, webhook: GetWebhook) -> Result<()> {
@@ -238,7 +280,90 @@ fn run_get_tag(client: Client, account: GetTag) -> Result<()> {
 }
 
 fn run_list(client: Client, list: ListCommand) -> Result<()> {
-    todo!()
+    use ListResourceCommand::*;
+    match list.resource {
+        Accounts(accounts) => run_list_accounts(client, accounts),
+        Transactions(transactions) => run_list_transactions(client, transactions),
+        Categories(categories) => run_list_categories(client, categories),
+        Tags(tags) => run_list_tags(client, tags),
+        Webhooks(webhooks) => run_list_webhooks(client, webhooks),
+    }
+}
+
+fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
+    if accounts.max_count.is_some() {
+        warn!("Limiting accounts with max-count is not implemented yet");
+    }
+    let resp = client.account.list().context("Failed to list accounts")?;
+    match resp {
+        upbank::response::Response::Ok(accs) => {
+            let mut table = Table::new();
+            table.add_row(row!["Name", "Balance", "Type", "Created", "ID"]);
+            for acc in accs.data {
+                table.add_row(row![
+                    acc.attributes.display_name,
+                    acc.attributes.balance,
+                    acc.attributes.account_type,
+                    acc.attributes.created_at,
+                    acc.id,
+                ]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!("Failed to list accounts:\n{}", e)),
+    }
+}
+
+fn run_list_transactions(client: Client, transactions: ListTransactions) -> Result<()> {
+    if transactions.max_count.is_some() {
+        warn!("Limiting transactions with max-count is not implemented yet")
+    }
+    let resp = client
+        .transaction
+        .list()
+        .context("Failed to list transactions")?;
+    match resp {
+        upbank::response::Response::Ok(transacts) => {
+            let mut table = Table::new();
+            table.add_row(row![
+                "Description",
+                "Amount",
+                "Status",
+                "Created",
+                "Settled",
+                "ID",
+            ]);
+            for transaction in transacts.data {
+                table.add_row(row![
+                    transaction.attributes.description,
+                    transaction.attributes.amount,
+                    transaction.attributes.status,
+                    transaction.attributes.created_at,
+                    transaction
+                        .attributes
+                        .settled_at
+                        .map_or_else(|| "N/A".to_string(), |d| d.to_string(),),
+                    transaction.id,
+                ]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!("Failed to list transactions:\n{}", e)),
+    }
+}
+
+fn run_list_categories(client: Client, categories: ListCategories) -> Result<()> {
+    unimplemented!()
+}
+
+fn run_list_tags(client: Client, tags: ListTags) -> Result<()> {
+    unimplemented!()
+}
+
+fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
+    unimplemented!()
 }
 
 fn run_register(client: Client, register: RegisterCommand) -> Result<()> {
