@@ -1383,6 +1383,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "argh",
+ "chrono",
  "log",
  "pretty_env_logger",
  "prettytable-rs",
