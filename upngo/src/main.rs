@@ -55,6 +55,18 @@ struct ListTransactions {
     /// filter transactions by status.
     #[argh(option, short = 's')]
     status: Option<upbank::transaction::Status>,
+    /// filter transactions since the given date.
+    #[argh(option, short = 'a')]
+    since: Option<chrono::DateTime<chrono::Local>>,
+    /// filter transactions upto the given date.
+    #[argh(option, short = 'b')]
+    until: Option<chrono::DateTime<chrono::Local>>,
+    /// filter by category.
+    #[argh(option, short = 'c')]
+    category: Option<String>,
+    /// filter by tag.
+    #[argh(option, short = 't')]
+    tag: Option<String>,
 }
 
 /// List accounts.
@@ -319,6 +331,19 @@ fn run_list_transactions(client: Client, transactions: ListTransactions) -> Resu
     if transactions.max_count.is_some() {
         warn!("Limiting transactions with max-count is not implemented yet")
     }
+
+    if transactions.category.is_some() {
+        warn!("Filtering transactions by category is not yet implemented");
+    }
+
+    if transactions.since.is_some() || transactions.until.is_some() {
+        warn!("Filtering transactions by date is not yet implemented")
+    }
+
+    if transactions.status.is_some() {
+        warn!("Filtering transactions by status is not yet supported")
+    }
+
     let resp = client
         .transaction
         .list()
