@@ -1,8 +1,8 @@
 use crate::{currency, error, resource, response, transaction};
 use log::*;
 use serde::Deserialize;
-use url::Url;
 use strum_macros::Display;
+use url::Url;
 
 pub struct AccountClient {
     client: reqwest::blocking::Client,
@@ -54,19 +54,13 @@ impl AccountClient {
         }
     }
 
-    pub fn list(&self) -> error::Result<response::Response<Vec<Account>>> {
-        debug!(
-            "Sending account list request to {}",
-            self.base_url.to_string()
-        );
-        let resp = self
-            .client
-            .get(self.base_url.clone())
-            .bearer_auth(&self.token)
-            .send()?
-            .json::<response::Response<Vec<Account>>>()?;
-        trace!("List accounts responded with {:?}", resp);
-        Ok(resp)
+    pub fn list(&self) -> ListRequestBuilder {
+        ListRequestBuilder {
+            count: None,
+            client: &self.client,
+            base_url: self.base_url.clone(),
+            token: self.token.clone(),
+        }
     }
 
     pub fn get(&self, id: String) -> error::Result<response::Response<Account>> {
@@ -101,6 +95,36 @@ impl AccountClient {
             .send()?
             .json::<response::Response<Vec<transaction::Transaction>>>()?;
         trace!("Get account transactions responded with {:?}", resp);
+        Ok(resp)
+    }
+}
+
+pub struct ListRequestBuilder<'a> {
+    count: Option<u32>,
+    base_url: Url,
+    client: &'a reqwest::blocking::Client,
+    token: String,
+}
+
+impl<'a> ListRequestBuilder<'a> {
+    pub fn count(&mut self, count: u32) -> &mut Self {
+        self.count = Some(count);
+        self
+    }
+
+    pub fn exec(&self) -> error::Result<response::Response<Vec<Account>>> {
+        debug!(
+            "Sending account list request to {}",
+            self.base_url.to_string()
+        );
+        let resp = self
+            .client
+            .get(self.base_url.clone())
+            .query(&[("page[size]", self.count)])
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<Vec<Account>>>()?;
+        trace!("List accounts responded with {:?}", resp);
         Ok(resp)
     }
 }

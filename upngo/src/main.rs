@@ -303,10 +303,12 @@ fn run_list(client: Client, list: ListCommand) -> Result<()> {
 }
 
 fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
-    if accounts.max_count.is_some() {
-        warn!("Limiting accounts with max-count is not implemented yet");
+    let mut req = client.account.list();
+    if let Some(count) = accounts.max_count {
+        req.count(count);
     }
-    let resp = client.account.list().context("Failed to list accounts")?;
+    
+    let resp = req.exec().context("Failed to list accounts")?;
     match resp {
         upbank::response::Response::Ok(accs) => {
             let mut table = Table::new();

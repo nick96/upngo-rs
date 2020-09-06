@@ -9,6 +9,7 @@ fn test_list_accounts() {
     let accounts = get_client()
         .account
         .list()
+        .exec()
         .expect("Error response from accounts request");
     assert!(
         accounts.is_ok(),
