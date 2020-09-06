@@ -66,6 +66,13 @@ pub enum ClientError {
     /// Error working with URLs.
     #[error("Failed to parse URL: {0}")]
     UrlError(#[from] url::ParseError),
+
+    /// Conversion error.
+    #[error("Failed to convert {value}: {reason}")]
+    ConversionError {
+        value: String,
+        reason: String
+    }
 }
 
 pub type Result<T> = std::result::Result<T, ClientError>;

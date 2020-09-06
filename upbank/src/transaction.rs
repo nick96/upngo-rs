@@ -1,8 +1,8 @@
 use crate::{currency, error, resource, response};
 use log::*;
 use serde::Deserialize;
-use url::Url;
 use strum_macros::Display;
+use url::Url;
 
 pub struct TransactionClient {
     client: reqwest::blocking::Client,
@@ -10,10 +10,25 @@ pub struct TransactionClient {
     token: String,
 }
 
-#[derive(Deserialize, Debug, Display)]
+#[derive(Deserialize, Debug, Display, PartialEq)]
 pub enum Status {
     HELD,
     SETTLED,
+}
+
+impl std::str::FromStr for Status {
+    type Err = error::ClientError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match &s.to_lowercase()[..] {
+            "held" => Ok(Status::HELD),
+            "settled" => Ok(Status::SETTLED),
+            _ => Err(error::ClientError::ConversionError{
+                value: s.into(),
+                reason: "Must be one of [held, settled] (case insensitive)".into(),
+            })
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -102,16 +117,8 @@ impl TransactionClient {
     }
 
     pub fn list(&self) -> error::Result<response::Response<Vec<Transaction>>> {
-        let mut url = self.base_url.clone();
-        url.set_query(Some("page[size]=2"));
+        let url = self.base_url.clone();
         debug!("Sending transaction list request to {}", url.to_string());
-        let hash_resp = self
-            .client
-            .get(url.clone())
-            .bearer_auth(&self.token)
-            .send()?
-            .json::<serde_json::Value>()?;
-        debug!("Transaction list request hash response: {:#?}", hash_resp);
         let resp = self
             .client
             .get(url.clone())
