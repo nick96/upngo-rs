@@ -1,8 +1,8 @@
-use crate::{currency, error, resource, response, transaction};
+use crate::{currency, error, resource, response, setter, transaction};
 use log::*;
 use serde::Deserialize;
 use strum_macros::Display;
-use url::Url;
+use url::{form_urlencoded, Url};
 
 pub struct AccountClient {
     client: reqwest::blocking::Client,
@@ -54,9 +54,9 @@ impl AccountClient {
         }
     }
 
-    pub fn list(&self) -> ListRequestBuilder {
-        ListRequestBuilder {
-            count: None,
+    pub fn list(&self) -> AccountListRequestBuilder {
+        AccountListRequestBuilder {
+            size: None,
             client: &self.client,
             base_url: self.base_url.clone(),
             token: self.token.clone(),
@@ -76,13 +76,116 @@ impl AccountClient {
         Ok(resp)
     }
 
-    pub fn transactions(
-        &self,
-        id: String,
-    ) -> error::Result<response::Response<Vec<transaction::Transaction>>> {
+    pub fn transactions(&self, id: String) -> TransactionListRequestBuilder {
+        TransactionListRequestBuilder {
+            base_url: self.base_url.clone(),
+            client: &self.client,
+            token: self.token.clone(),
+            id,
+
+            size: None,
+            status: None,
+            since: None,
+            until: None,
+            category: None,
+            tag: None,
+        }
+    }
+}
+
+pub struct AccountListRequestBuilder<'a> {
+    size: Option<u32>,
+    base_url: Url,
+    client: &'a reqwest::blocking::Client,
+    token: String,
+}
+
+impl<'a> AccountListRequestBuilder<'a> {
+    setter!(size, u32);
+
+    pub fn exec(&self) -> error::Result<response::Response<Vec<Account>>> {
+        let mut query = vec![];
+        if let Some(size) = self.size {
+            query.push(("page[size]", size))
+        }
+        debug!(
+            "Sending account list request to {}",
+            self.base_url.to_string()
+        );
+        let resp = self
+            .client
+            .get(self.base_url.clone())
+            .bearer_auth(&self.token)
+            .query(&query)
+            .send()?
+            .json::<response::Response<Vec<Account>>>()?;
+        trace!("List accounts responded with {:?}", resp);
+        Ok(resp)
+    }
+}
+
+pub struct TransactionListRequestBuilder<'a> {
+    base_url: Url,
+    client: &'a reqwest::blocking::Client,
+    token: String,
+    id: String,
+
+    size: Option<u32>,
+    status: Option<transaction::Status>,
+    since: Option<chrono::DateTime<chrono::Local>>,
+    until: Option<chrono::DateTime<chrono::Local>>,
+    category: Option<String>,
+    tag: Option<String>,
+}
+
+impl<'a> TransactionListRequestBuilder<'a> {
+    setter!(size, u32);
+    setter!(status, transaction::Status);
+    setter!(since, chrono::DateTime<chrono::Local>);
+    setter!(until, chrono::DateTime<chrono::Local>);
+    setter!(category, String);
+    setter!(tag, String);
+
+    pub fn exec(&self) -> error::Result<response::Response<Vec<transaction::Transaction>>> {
+        let mut query = vec![];
+
+        if let Some(size) = self.size {
+            let value: String =
+                form_urlencoded::byte_serialize(size.to_string().as_bytes()).collect();
+            query.push(("filter[size]", value))
+        }
+
+        if let Some(status) = &self.status {
+            let value: String =
+                form_urlencoded::byte_serialize(status.to_string().as_bytes()).collect();
+            query.push(("filter[status]", value))
+        }
+
+        if let Some(since) = self.since {
+            let value: String =
+                form_urlencoded::byte_serialize(since.to_rfc3339().as_bytes()).collect();
+            query.push(("filter[since]", value));
+        }
+
+        if let Some(until) = self.until {
+            let value: String =
+                form_urlencoded::byte_serialize(until.to_rfc3339().as_bytes()).collect();
+            query.push(("filter[until]", value));
+        }
+
+        if let Some(category) = &self.category {
+            let value: String = form_urlencoded::byte_serialize(category.as_bytes()).collect();
+            query.push(("filter[category]", value));
+        }
+
+        if let Some(tag) = &self.tag {
+            let value: String = form_urlencoded::byte_serialize(tag.as_bytes()).collect();
+            query.push(("filter[tag]", value));
+        }
+
         // Append "/" to the ID so that appending "transactions" after doesn't
         // stomp it.
-        let id_part = id + "/";
+        let id_part = format!("{}/", self.id);
         let url = self.base_url.join(&id_part)?.join("transactions")?;
         debug!(
             "Sending account transactions get request to {}",
@@ -92,39 +195,10 @@ impl AccountClient {
             .client
             .get(url)
             .bearer_auth(&self.token)
+            .query(&query)
             .send()?
             .json::<response::Response<Vec<transaction::Transaction>>>()?;
         trace!("Get account transactions responded with {:?}", resp);
-        Ok(resp)
-    }
-}
-
-pub struct ListRequestBuilder<'a> {
-    count: Option<u32>,
-    base_url: Url,
-    client: &'a reqwest::blocking::Client,
-    token: String,
-}
-
-impl<'a> ListRequestBuilder<'a> {
-    pub fn count(&mut self, count: u32) -> &mut Self {
-        self.count = Some(count);
-        self
-    }
-
-    pub fn exec(&self) -> error::Result<response::Response<Vec<Account>>> {
-        debug!(
-            "Sending account list request to {}",
-            self.base_url.to_string()
-        );
-        let resp = self
-            .client
-            .get(self.base_url.clone())
-            .query(&[("page[size]", self.count)])
-            .bearer_auth(&self.token)
-            .send()?
-            .json::<response::Response<Vec<Account>>>()?;
-        trace!("List accounts responded with {:?}", resp);
         Ok(resp)
     }
 }
