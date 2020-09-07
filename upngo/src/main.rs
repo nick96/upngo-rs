@@ -24,7 +24,13 @@ enum Subcommand {
     List(ListCommand),
     Get(GetCommand),
     Register(RegisterCommand),
+    Ping(PingCommand),
 }
+
+/// Ping UpBank.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "ping")]
+struct PingCommand {}
 
 /// List a resource.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -205,12 +211,22 @@ fn main() -> Result<()> {
 
     use Subcommand::*;
     match args.subcomand {
-        Get(get) => run_get(client, get)?,
-        List(list) => run_list(client, list)?,
-        Register(register) => run_register(client, register)?,
+        Get(get) => run_get(client, get),
+        List(list) => run_list(client, list),
+        Register(register) => run_register(client, register),
+        Ping(_) => run_ping(client),
     }
+}
 
-    Ok(())
+fn run_ping(client: Client) -> Result<()> {
+    let resp = client.util.ping()?;
+    match resp {
+        upbank::util::PingResponse::Ok(ping) => {
+            println!("UpBank is up {}", ping.meta.status_emoji);
+            Ok(())
+        }
+        upbank::util::PingResponse::Err(e) => Err(anyhow!("Failed to ping UpBank: {}", e)),
+    }
 }
 
 fn run_get(client: Client, get: GetCommand) -> Result<()> {
