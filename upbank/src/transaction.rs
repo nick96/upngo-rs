@@ -2,7 +2,7 @@ use crate::{currency, error, resource, response, setter};
 use log::*;
 use serde::Deserialize;
 use strum_macros::Display;
-use url::Url;
+use url::{form_urlencoded, Url};
 
 pub struct TransactionClient {
     client: reqwest::blocking::Client,
@@ -168,11 +168,49 @@ impl<'a> ListRequestBuilder<'a> {
 
     pub fn exec(&self) -> error::Result<response::Response<Vec<Transaction>>> {
         let url = self.base_url.clone();
+
+        let mut query = vec![];
+
+        if let Some(size) = self.size {
+            let value: String =
+                form_urlencoded::byte_serialize(size.to_string().as_bytes()).collect();
+            query.push(("filter[size]", value))
+        }
+
+        if let Some(status) = &self.status {
+            let value: String =
+                form_urlencoded::byte_serialize(status.to_string().as_bytes()).collect();
+            query.push(("filter[status]", value))
+        }
+
+        if let Some(since) = self.since {
+            let value: String =
+                form_urlencoded::byte_serialize(since.to_rfc3339().as_bytes()).collect();
+            query.push(("filter[since]", value));
+        }
+
+        if let Some(until) = self.until {
+            let value: String =
+                form_urlencoded::byte_serialize(until.to_rfc3339().as_bytes()).collect();
+            query.push(("filter[until]", value));
+        }
+
+        if let Some(category) = &self.category {
+            let value: String = form_urlencoded::byte_serialize(category.as_bytes()).collect();
+            query.push(("filter[category]", value));
+        }
+
+        if let Some(tag) = &self.tag {
+            let value: String = form_urlencoded::byte_serialize(tag.as_bytes()).collect();
+            query.push(("filter[tag]", value));
+        }
+
         debug!("Sending transaction list request to {}", url.to_string());
         let resp = self
             .client
             .get(url)
             .bearer_auth(&self.token)
+            .query(&query)
             .send()?
             .json::<response::Response<Vec<Transaction>>>()?;
         trace!("Transaction list request responded with {:?}", resp);
