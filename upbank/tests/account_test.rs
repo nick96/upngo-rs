@@ -35,6 +35,6 @@ fn test_list_account_transactions() {
     init_logger();
     let account_id =
         std::env::var("UPBANK_ACCOUNT_ID").expect("No env var UPBANK_ACCOUNT_ID found");
-    let transactions = get_client().account.transactions(account_id).unwrap();
+    let transactions = get_client().account.transactions(account_id).exec().unwrap();
     assert!(transactions.is_ok(), "Expected ok: {:?}", transactions);
 }

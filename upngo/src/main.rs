@@ -311,7 +311,6 @@ fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
     if let Some(size) = accounts.size {
         req.size(size);
     }
-    
     let resp = req.exec().context("Failed to list accounts")?;
     match resp {
         upbank::response::Response::Ok(accs) => {

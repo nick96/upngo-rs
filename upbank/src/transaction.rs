@@ -222,24 +222,8 @@ impl<'a> ListRequestBuilder<'a> {
 mod test {
     use super::Transaction;
     use crate::response::SuccessfulResponse;
+    use crate::test_deserialization;
 
-    #[test]
-    fn test_transaction_de() {
-        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let mut path = std::path::PathBuf::from(manifest_dir);
-        path.push("data");
-        path.push("transaction.json");
-        let contents = std::fs::read_to_string(path).unwrap();
-        let _ = serde_json::from_str::<SuccessfulResponse<Transaction>>(&contents).unwrap();
-    }
-
-    #[test]
-    fn test_transactions_de() {
-        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let mut path = std::path::PathBuf::from(manifest_dir);
-        path.push("data");
-        path.push("transaction_list.json");
-        let contents = std::fs::read_to_string(path).unwrap();
-        let _ = serde_json::from_str::<SuccessfulResponse<Vec<Transaction>>>(&contents).unwrap();
-    }
+    test_deserialization!(test_de, "transaction.json", Transaction);
+    test_deserialization!(test_multi_de, "transaction_list.json", Vec<Transaction>);
 }
