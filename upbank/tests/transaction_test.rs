@@ -5,7 +5,7 @@ use shared::{init_logger, get_client};
 #[test]
 fn test_list_transactions() {
     init_logger();
-    let transactions = get_client().transaction.list().unwrap();
+    let transactions = get_client().transaction.list().exec().unwrap();
     assert!(transactions.is_ok());
 }
 

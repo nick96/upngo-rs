@@ -12,6 +12,8 @@ mod currency;
 mod error;
 mod iso4217;
 mod resource;
+#[macro_use]
+mod macros;
 
 pub fn default_base_url() -> Url {
     // Ending the URL in a slash is important because otherwise the v1 gets

@@ -330,26 +330,25 @@ fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
 }
 
 fn run_list_transactions(client: Client, transactions: ListTransactions) -> Result<()> {
-    if transactions.max_count.is_some() {
-        warn!("Limiting transactions with max-count is not implemented yet")
+    let mut req = client.transaction.list();
+
+    if let Some(size) = transactions.max_count {
+        req.size(size);
     }
 
-    if transactions.category.is_some() {
-        warn!("Filtering transactions by category is not yet implemented");
+    if let Some(cat) = transactions.category {
+        req.category(cat);
     }
 
-    if transactions.since.is_some() || transactions.until.is_some() {
-        warn!("Filtering transactions by date is not yet implemented")
+    if let Some(since) = transactions.since {
+        req.since(since);
     }
 
-    if transactions.status.is_some() {
-        warn!("Filtering transactions by status is not yet supported")
+    if let Some(status) = transactions.status {
+        req.status(status);
     }
 
-    let resp = client
-        .transaction
-        .list()
-        .context("Failed to list transactions")?;
+    let resp = req.exec().context("Failed to list transactions")?;
     match resp {
         upbank::response::Response::Ok(transacts) => {
             let mut table = Table::new();

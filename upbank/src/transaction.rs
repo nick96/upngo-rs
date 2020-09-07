@@ -1,4 +1,4 @@
-use crate::{currency, error, resource, response};
+use crate::{currency, error, resource, response, setter};
 use log::*;
 use serde::Deserialize;
 use strum_macros::Display;
@@ -23,10 +23,10 @@ impl std::str::FromStr for Status {
         match &s.to_lowercase()[..] {
             "held" => Ok(Status::HELD),
             "settled" => Ok(Status::SETTLED),
-            _ => Err(error::ClientError::ConversionError{
+            _ => Err(error::ClientError::ConversionError {
                 value: s.into(),
                 reason: "Must be one of [held, settled] (case insensitive)".into(),
-            })
+            }),
         }
     }
 }
@@ -116,17 +116,19 @@ impl TransactionClient {
         }
     }
 
-    pub fn list(&self) -> error::Result<response::Response<Vec<Transaction>>> {
-        let url = self.base_url.clone();
-        debug!("Sending transaction list request to {}", url.to_string());
-        let resp = self
-            .client
-            .get(url.clone())
-            .bearer_auth(&self.token)
-            .send()?
-            .json::<response::Response<Vec<Transaction>>>()?;
-        trace!("Transaction list request responded with {:?}", resp);
-        Ok(resp)
+    pub fn list(&self) -> ListRequestBuilder {
+        ListRequestBuilder {
+            base_url: self.base_url.clone(),
+            client: &self.client,
+            token: self.token.clone(),
+
+            size: None,
+            status: None,
+            since: None,
+            until: None,
+            category: None,
+            tag: None,
+        }
     }
 
     pub fn get(&self, id: String) -> error::Result<response::Response<Transaction>> {
@@ -143,11 +145,45 @@ impl TransactionClient {
     }
 }
 
+pub struct ListRequestBuilder<'a> {
+    base_url: Url,
+    client: &'a reqwest::blocking::Client,
+    token: String,
+
+    size: Option<u32>,
+    status: Option<Status>,
+    since: Option<chrono::DateTime<chrono::Local>>,
+    until: Option<chrono::DateTime<chrono::Local>>,
+    category: Option<String>,
+    tag: Option<String>,
+}
+
+impl<'a> ListRequestBuilder<'a> {
+    setter!(size, u32);
+    setter!(status, Status);
+    setter!(since, chrono::DateTime<chrono::Local>);
+    setter!(until, chrono::DateTime<chrono::Local>);
+    setter!(category, String);
+    setter!(tag, String);
+
+    pub fn exec(&self) -> error::Result<response::Response<Vec<Transaction>>> {
+        let url = self.base_url.clone();
+        debug!("Sending transaction list request to {}", url.to_string());
+        let resp = self
+            .client
+            .get(url)
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<Vec<Transaction>>>()?;
+        trace!("Transaction list request responded with {:?}", resp);
+        Ok(resp)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Transaction;
     use crate::response::SuccessfulResponse;
-    use serde_json;
 
     #[test]
     fn test_transaction_de() {
