@@ -91,7 +91,11 @@ struct ListTags {}
 /// List webhooks.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "webhooks")]
-struct ListWebhooks {}
+struct ListWebhooks {
+    /// max number of webhooks to list.
+    #[argh(option, short = 'n')]
+    size: Option<u32>,
+}
 
 /// Get a resource by its ID.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -389,7 +393,30 @@ fn run_list_tags(client: Client, tags: ListTags) -> Result<()> {
 }
 
 fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
-    unimplemented!()
+    let mut req = client.webhook.list();
+    if let Some(size) = webhooks.size {
+        req.size(size);
+    }
+    let resp = req.exec().context("Failed to list webhooks")?;
+    match resp {
+        upbank::response::Response::Ok(webhooks) => {
+            let mut table = Table::new();
+            table.add_row(row!["Description", "URL", "Created",]);
+            for webhook in webhooks.data {
+                table.add_row(row![
+                    webhook.attributes.url,
+                    webhook
+                        .attributes
+                        .description
+                        .map_or_else(|| "N/A".to_string(), std::convert::identity),
+                    webhook.attributes.created_at,
+                ]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!("Failed to list webhooks:\n{}", e)),
+    }
 }
 
 fn run_register(client: Client, register: RegisterCommand) -> Result<()> {

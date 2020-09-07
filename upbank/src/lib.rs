@@ -6,6 +6,7 @@ pub mod response;
 pub mod account;
 pub mod transaction;
 pub mod util;
+pub mod webhook;
 
 // Utilities that we share between modules but don't expose.
 mod currency;
@@ -29,6 +30,7 @@ pub struct Client {
     pub util: util::Util,
     pub account: account::AccountClient,
     pub transaction: transaction::TransactionClient,
+    pub webhook: webhook::WebhookClient,
 }
 
 impl Client {
@@ -53,6 +55,12 @@ impl Client {
             transaction: transaction::TransactionClient::new(
                 base_url.join("transactions/").unwrap_or_else(|_| {
                     panic!("Couldn't add 'transactions/' to base URL {}", base_url)
+                }),
+                token.clone(),
+            ),
+            webhook: webhook::WebhookClient::new(
+                base_url.join("webhooks/").unwrap_or_else(|_| {
+                    panic!("Couldn't add 'webhooks/' to base URL {}", base_url)
                 }),
                 token,
             ),

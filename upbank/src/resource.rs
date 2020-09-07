@@ -5,6 +5,7 @@ use serde::Deserialize;
 pub enum ResourceType {
     TRANSACTIONS,
     ACCOUNTS,
+    WEBHOOKS,
 }
 
 #[derive(Deserialize, Debug)]
