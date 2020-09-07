@@ -133,7 +133,6 @@ impl<'a> ListRequestBuilder<'a> {
 mod test {
     use super::Account;
     use crate::response::SuccessfulResponse;
-    use serde_json;
 
     #[test]
     fn test_account_de() {
