@@ -51,7 +51,7 @@ enum ListResourceCommand {
 struct ListTransactions {
     /// max number of transactions to list.
     #[argh(option, short = 'n')]
-    max_count: Option<u32>,
+    size: Option<u32>,
     /// filter transactions by status.
     #[argh(option, short = 's')]
     status: Option<upbank::transaction::Status>,
@@ -75,7 +75,7 @@ struct ListTransactions {
 struct ListAccounts {
     /// max number of accounts to list.
     #[argh(option, short = 'n')]
-    max_count: Option<u32>,
+    size: Option<u32>,
 }
 
 /// List categories.
@@ -304,8 +304,8 @@ fn run_list(client: Client, list: ListCommand) -> Result<()> {
 
 fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
     let mut req = client.account.list();
-    if let Some(count) = accounts.max_count {
-        req.count(count);
+    if let Some(size) = accounts.size {
+        req.size(size);
     }
     
     let resp = req.exec().context("Failed to list accounts")?;
@@ -332,7 +332,7 @@ fn run_list_accounts(client: Client, accounts: ListAccounts) -> Result<()> {
 fn run_list_transactions(client: Client, transactions: ListTransactions) -> Result<()> {
     let mut req = client.transaction.list();
 
-    if let Some(size) = transactions.max_count {
+    if let Some(size) = transactions.size {
         req.size(size);
     }
 
