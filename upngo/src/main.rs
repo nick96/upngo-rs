@@ -128,7 +128,7 @@ enum GetResourceCommand {
 
 /// Get a transactions.
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "transactions")]
+#[argh(subcommand, name = "transaction")]
 struct GetTransaction {
     /// id of the transaction to get.
     #[argh(positional)]
@@ -137,7 +137,7 @@ struct GetTransaction {
 
 /// Get am account..
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "accounts")]
+#[argh(subcommand, name = "account")]
 struct GetAccount {
     /// id of the account to get.
     #[argh(positional)]
@@ -155,12 +155,12 @@ struct GetCategory {
 
 /// Get a tag.
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "tags")]
+#[argh(subcommand, name = "tag")]
 struct GetTag {}
 
 /// Get a webhook.
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "webhooks")]
+#[argh(subcommand, name = "webhook")]
 struct GetWebhook {}
 
 /// Register a resource.
