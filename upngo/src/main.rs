@@ -96,7 +96,11 @@ struct ListCategories {
 /// List tags.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "tags")]
-struct ListTags {}
+struct ListTags {
+    /// max number of tags to show.
+    #[argh(option, short = 'n')]
+    size: Option<u32>,
+}
 
 /// List webhooks.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -122,7 +126,6 @@ enum GetResourceCommand {
     Transaction(GetTransaction),
     Account(GetAccount),
     Category(GetCategory),
-    Tag(GetTag),
     Webhook(GetWebhook),
 }
 
@@ -152,11 +155,6 @@ struct GetCategory {
     #[argh(positional)]
     id: String,
 }
-
-/// Get a tag.
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "tag")]
-struct GetTag {}
 
 /// Get a webhook.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -244,7 +242,6 @@ fn run_get(client: Client, get: GetCommand) -> Result<()> {
         Transaction(transaction) => run_get_transaction(client, transaction),
         Webhook(webhook) => run_get_webhook(client, webhook),
         Category(cat) => run_get_category(client, cat),
-        Tag(tag) => run_get_tag(client, tag),
     }
 }
 
@@ -329,10 +326,6 @@ fn run_get_category(client: Client, category: GetCategory) -> Result<()> {
             e
         )),
     }
-}
-
-fn run_get_tag(client: Client, account: GetTag) -> Result<()> {
-    unimplemented!()
 }
 
 fn run_list(client: Client, list: ListCommand) -> Result<()> {
@@ -443,7 +436,22 @@ fn run_list_categories(client: Client, categories: ListCategories) -> Result<()>
 }
 
 fn run_list_tags(client: Client, tags: ListTags) -> Result<()> {
-    unimplemented!()
+    let mut req = client.tag.list();
+    if let Some(size) = tags.size {
+        req.size(size);
+    }
+    let resp = req.exec().context("Failed to list tags")?;
+    match resp {
+        upbank::response::Response::Ok(tags) => {
+            let mut table = table!(["ID"]);
+            for tag in tags.data {
+                table.add_row(row![tag.id]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!("Failed to list tags:\n{}", e)),
+    }
 }
 
 fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {

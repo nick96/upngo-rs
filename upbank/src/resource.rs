@@ -7,6 +7,7 @@ pub enum ResourceType {
     ACCOUNTS,
     WEBHOOKS,
     CATEGORIES,
+    TAGS,
 }
 
 #[derive(Deserialize, Debug)]

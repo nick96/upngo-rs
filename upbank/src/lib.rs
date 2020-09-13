@@ -8,6 +8,7 @@ pub mod transaction;
 pub mod util;
 pub mod webhook;
 pub mod category;
+pub mod tag;
 
 // Utilities that we share between modules but don't expose.
 mod currency;
@@ -25,14 +26,15 @@ pub fn default_base_url() -> Url {
 }
 
 pub struct Client {
-    base_url: Url,
-    token: String,
+    _base_url: Url,
+    _token: String,
 
     pub util: util::Util,
     pub account: account::AccountClient,
     pub transaction: transaction::TransactionClient,
     pub webhook: webhook::WebhookClient,
     pub category: category::CategoryClient,
+    pub tag: tag::TagClient,
 }
 
 macro_rules! client {
@@ -47,8 +49,8 @@ macro_rules! client {
 impl Client {
     pub fn new(base_url: Url, token: String) -> Self {
         Client {
-            base_url: base_url.clone(),
-            token: token.clone(),
+            _base_url: base_url.clone(),
+            _token: token.clone(),
 
             util: util::Util::new(
                 base_url
@@ -74,8 +76,9 @@ impl Client {
                 base_url.join("categories/").unwrap_or_else(|_| {
                     panic!("Couldn't add 'categories/' to base URL {}", base_url)
                 }),
-                token,
+                token.clone(),
             ),
+            tag: client!(tag::TagClient, base_url, "tags/", token),
         }
     }
 
