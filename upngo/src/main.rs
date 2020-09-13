@@ -87,7 +87,11 @@ struct ListAccounts {
 /// List categories.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "categories")]
-struct ListCategories {}
+struct ListCategories {
+    /// filter categories to only those with this parent.
+    #[argh(option, short = 'p')]
+    parent: Option<String>,
+}
 
 /// List tags.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -142,8 +146,12 @@ struct GetAccount {
 
 /// Get a category.
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "categories")]
-struct GetCategory {}
+#[argh(subcommand, name = "category")]
+struct GetCategory {
+    /// id of the category to get.
+    #[argh(positional)]
+    id: String,
+}
 
 /// Get a tag.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -303,8 +311,24 @@ fn run_get_webhook(client: Client, webhook: GetWebhook) -> Result<()> {
     unimplemented!()
 }
 
-fn run_get_category(client: Client, account: GetCategory) -> Result<()> {
-    unimplemented!()
+fn run_get_category(client: Client, category: GetCategory) -> Result<()> {
+    let resp = client
+        .category
+        .get(&category.id)
+        .with_context(|| format!("Failed to get category with ID {}", category.id))?;
+    match resp {
+        upbank::response::Response::Ok(category) => {
+            let attrs: upbank::category::Attributes = category.data.attributes;
+            let table = table!(["Name"], [attrs.name]);
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!(
+            "Failed to get transaction with ID {}:\n{}",
+            &category.id,
+            e
+        )),
+    }
 }
 
 fn run_get_tag(client: Client, account: GetTag) -> Result<()> {
@@ -400,7 +424,22 @@ fn run_list_transactions(client: Client, transactions: ListTransactions) -> Resu
 }
 
 fn run_list_categories(client: Client, categories: ListCategories) -> Result<()> {
-    unimplemented!()
+    let mut req = client.category.list();
+    if let Some(parent) = categories.parent {
+        req.parent(parent);
+    }
+    let resp = req.exec().context("Failed to list categories")?;
+    match resp {
+        upbank::response::Response::Ok(categories) => {
+            let mut table = table!(["Name", "ID"]);
+            for category in categories.data {
+                table.add_row(row![category.attributes.name, category.id]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        upbank::response::Response::Err(e) => Err(anyhow!("Failed to list categories:\n{}", e)),
+    }
 }
 
 fn run_list_tags(client: Client, tags: ListTags) -> Result<()> {
