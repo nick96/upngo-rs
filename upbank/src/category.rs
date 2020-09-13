@@ -1,7 +1,7 @@
 use crate::{error::Result, resource::Resource, response::Response, setter};
 use log::*;
 use serde::Deserialize;
-use url::{form_urlencoded, Url};
+use url::Url;
 
 pub struct CategoryClient {
     client: reqwest::blocking::Client,
