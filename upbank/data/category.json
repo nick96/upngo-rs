@@ -1,0 +1,28 @@
+{
+  "data": {
+    "type": "categories",
+    "id": "home",
+    "attributes": {
+      "name": "Home"
+    },
+    "relationships": {
+      "parent": {
+        "data": null
+      },
+      "children": {
+        "data": [
+          {
+            "type": "categories",
+            "id": "groceries"
+          }
+        ],
+        "links": {
+          "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=home"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/categories/home"
+    }
+  }
+}

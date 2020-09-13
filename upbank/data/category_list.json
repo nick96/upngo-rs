@@ -1,0 +1,58 @@
+{
+  "data": [
+    {
+      "type": "categories",
+      "id": "hobbies",
+      "attributes": {
+        "name": "Hobbies"
+      },
+      "relationships": {
+        "parent": {
+          "data": {
+            "type": "categories",
+            "id": "good-life"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories/good-life"
+          }
+        },
+        "children": {
+          "data": [],
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=hobbies"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/categories/hobbies"
+      }
+    },
+    {
+      "type": "categories",
+      "id": "restaurants-and-cafes",
+      "attributes": {
+        "name": "Restaurants & Cafes"
+      },
+      "relationships": {
+        "parent": {
+          "data": {
+            "type": "categories",
+            "id": "good-life"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories/good-life"
+          }
+        },
+        "children": {
+          "data": [],
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=restaurants-and-cafes"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/categories/restaurants-and-cafes"
+      }
+    }
+  ]
+}

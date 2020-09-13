@@ -7,6 +7,7 @@ pub mod account;
 pub mod transaction;
 pub mod util;
 pub mod webhook;
+pub mod category;
 
 // Utilities that we share between modules but don't expose.
 mod currency;
@@ -31,6 +32,16 @@ pub struct Client {
     pub account: account::AccountClient,
     pub transaction: transaction::TransactionClient,
     pub webhook: webhook::WebhookClient,
+    pub category: category::CategoryClient,
+}
+
+macro_rules! client {
+    ($typ:ty, $base:expr, $path:expr, $tok:expr) => {
+        <$typ>::new(
+            $base.join($path).unwrap_or_else(|_| panic!("Couldn't add '{}' to base URL {}", $path, $base)),
+            $tok.clone(),
+        );
+    };
 }
 
 impl Client {
@@ -58,9 +69,10 @@ impl Client {
                 }),
                 token.clone(),
             ),
-            webhook: webhook::WebhookClient::new(
-                base_url.join("webhooks/").unwrap_or_else(|_| {
-                    panic!("Couldn't add 'webhooks/' to base URL {}", base_url)
+            webhook: client!(webhook::WebhookClient, base_url, "webhooks/", token),
+            category: category::CategoryClient::new(
+                base_url.join("categories/").unwrap_or_else(|_| {
+                    panic!("Couldn't add 'categories/' to base URL {}", base_url)
                 }),
                 token,
             ),

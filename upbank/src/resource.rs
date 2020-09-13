@@ -6,6 +6,7 @@ pub enum ResourceType {
     TRANSACTIONS,
     ACCOUNTS,
     WEBHOOKS,
+    CATEGORIES,
 }
 
 #[derive(Deserialize, Debug)]
