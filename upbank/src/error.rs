@@ -63,6 +63,10 @@ pub enum ClientError {
     #[error("Request failed: {0}")]
     RequestError(#[from] reqwest::Error),
 
+    /// Error due to serialization.
+    #[error("Serialization failed: {0}")]
+    SerializationError(#[from] serde_json::error::Error),
+
     /// Error working with URLs.
     #[error("Failed to parse URL: {0}")]
     UrlError(#[from] url::ParseError),

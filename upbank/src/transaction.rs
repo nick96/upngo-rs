@@ -1,6 +1,6 @@
 use crate::{currency, error, resource, response, setter};
 use log::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use url::{form_urlencoded, Url};
 
@@ -105,6 +105,20 @@ pub struct Relationships {
     pub tags: TagsRelationship,
 }
 
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TagInputResource {
+    #[serde(rename = "type")]
+    pub resource_type: resource::ResourceType,
+    pub id: String,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TagInputResources {
+    pub data: Vec<TagInputResource>,
+}
+
 pub type Transaction = resource::Resource<Attributes, Relationships>;
 
 impl TransactionClient {
@@ -142,6 +156,36 @@ impl TransactionClient {
             .json::<response::Response<Transaction>>()?;
         trace!("Transaction get request responded with {:?}", resp);
         Ok(resp)
+    }
+
+    pub fn tag(&self, id: &str, tags: Vec<String>) -> error::Result<()> {
+        self.add_or_delete_tag(id, tags, false)
+    }
+
+    pub fn delete_tag(&self, id: &str, tags: Vec<String>) -> error::Result<()> {
+        self.add_or_delete_tag(id, tags, true)
+    }
+
+    fn add_or_delete_tag(&self, id: &str, tags: Vec<String>, delete: bool) -> error::Result<()> {
+        let url = self.base_url.join(&format!("{}/relationships/tags", id))?;
+        debug!("Tagging transaction {} with tags {:?}", id, tags);
+        let body = TagInputResources {
+            data: tags
+                .iter()
+                .map(|t| TagInputResource {
+                    resource_type: resource::ResourceType::TAGS,
+                    id: t.clone(),
+                })
+                .collect(),
+        };
+        let se_body = serde_json::to_string(&body)?;
+        let req = if delete {
+            self.client.delete(url)
+        } else {
+            self.client.post(url)
+        };
+        req.bearer_auth(&self.token).body(se_body).send()?;
+        Ok(())
     }
 }
 
@@ -205,7 +249,7 @@ impl<'a> ListRequestBuilder<'a> {
             query.push(("filter[tag]", value));
         }
 
-        debug!("Sending transaction list request to {}", url.to_string());
+        debug!("Sending transaction list request to {}", url.to_string(),);
         let resp = self
             .client
             .get(url)

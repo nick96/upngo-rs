@@ -25,6 +25,7 @@ enum Subcommand {
     Get(GetCommand),
     Register(RegisterCommand),
     Ping(PingCommand),
+    Tag(TagCommand),
 }
 
 /// Ping UpBank.
@@ -39,6 +40,36 @@ struct ListCommand {
     /// resource to list.
     #[argh(subcommand)]
     resource: ListResourceCommand,
+}
+
+/// Tag a resource.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "tag")]
+struct TagCommand {
+    /// resource to tag.
+    #[argh(subcommand)]
+    resource: TagResourceCommand,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+enum TagResourceCommand {
+    Transaction(TagTransaction),
+}
+
+/// Tag a transaction.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "transaction")]
+struct TagTransaction {
+    /// id of the transaction to tag.
+    #[argh(positional)]
+    transaction_id: String,
+    /// tags to add to the transaction.
+    #[argh(positional)]
+    tags: Vec<String>,
+    /// delete the specified tags.
+    #[argh(switch, short = 'd')]
+    delete: bool,
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -221,6 +252,7 @@ fn main() -> Result<()> {
         List(list) => run_list(client, list),
         Register(register) => run_register(client, register),
         Ping(_) => run_ping(client),
+        Tag(tag) => run_tag(client, tag),
     }
 }
 
@@ -483,4 +515,28 @@ fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
 
 fn run_register(client: Client, register: RegisterCommand) -> Result<()> {
     unimplemented!()
+}
+
+fn run_tag(client: Client, tag: TagCommand) -> Result<()> {
+    use TagResourceCommand::*;
+    match tag.resource {
+        Transaction(tag_transaction) => run_tag_transaction(client, tag_transaction),
+    }
+}
+
+fn run_tag_transaction(client: Client, tag: TagTransaction) -> Result<()> {
+    let id = tag.transaction_id;
+    let tags = tag.tags.clone();
+
+    if tag.delete {
+        client
+            .transaction
+            .delete_tag(&id, tags.clone())
+            .with_context(|| format!("Failed to delete tags {:?} on transaction {}", tags, id))
+    } else {
+        client
+            .transaction
+            .tag(&id, tags.clone())
+            .with_context(|| format!("Failed to add tags {:?} on transaction {}", tags, id))
+    }
 }
