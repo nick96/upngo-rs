@@ -218,7 +218,7 @@ impl<'a> ListRequestBuilder<'a> {
         if let Some(size) = self.size {
             let value: String =
                 form_urlencoded::byte_serialize(size.to_string().as_bytes()).collect();
-            query.push(("filter[size]", value))
+            query.push(("page[size]", value))
         }
 
         if let Some(status) = &self.status {
