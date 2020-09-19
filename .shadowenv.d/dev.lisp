@@ -1,1 +1,1 @@
-(env/set "RUST_LOG" "upbank=TRACE,upngo=TRACE")
+(env/set "RUST_LOG" "upbank=DEBUG,upngo=TRACE,reqwest=DEBUG")
