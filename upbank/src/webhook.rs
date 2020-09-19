@@ -41,6 +41,40 @@ impl WebhookClient {
         trace!("Webhook get request responded with {:?}", resp);
         Ok(resp)
     }
+
+    pub fn ping(&self, id: &str) -> error::Result<response::Response<WebhookPing>> {
+        let url = self.base_url.join(&(id.to_owned() + "/"))?.join("ping")?;
+        debug!("Sending webhook ping rquest to {}", url.to_string());
+        let resp = self
+            .client
+            .post(url)
+            .body("")
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<WebhookPing>>()?;
+        trace!("Webhook ping rquest responded with {:?}", resp);
+        Ok(resp)
+    }
+
+    pub fn logs<'a>(&'a self, id: &'a str) -> LogListRequestBuilder<'a> {
+        LogListRequestBuilder {
+            client: &self.client,
+            base_url: self.base_url.clone(),
+            token: self.token.clone(),
+            id,
+
+            size: None,
+        }
+    }
+}
+
+pub struct LogListRequestBuilder<'a> {
+    client: &'a reqwest::blocking::Client,
+    base_url: Url,
+    token: String,
+    id: &'a str,
+
+    size: Option<u32>,
 }
 
 pub struct ListRequestBuilder<'a> {
@@ -93,6 +127,31 @@ impl<'a> ListRequestBuilder<'a> {
     }
 }
 
+impl<'a> LogListRequestBuilder<'a> {
+    setter!(size, u32);
+
+    pub fn exec(&self) -> error::Result<response::Response<Vec<WebhookLogRecord>>> {
+        let url = self
+            .base_url
+            .join(&(self.id.to_owned() + "/"))?
+            .join("logs")?;
+        let mut query = vec![];
+        if let Some(size) = self.size {
+            query.push(ListParams::PageSize(size));
+        }
+        debug!("Sending webhook log request to {}", url.to_string());
+        let resp = self
+            .client
+            .get(url)
+            .bearer_auth(&self.token)
+            .query(&query)
+            .send()?
+            .json::<response::Response<Vec<WebhookLogRecord>>>()?;
+        trace!("Webhook log request responded with: {:?}", resp);
+        Ok(resp)
+    }
+}
+
 pub type Webhook = resource::Resource<Attributes, Relationships>;
 
 #[derive(Deserialize, Debug)]
@@ -121,6 +180,27 @@ pub struct LogRelationship {
 pub struct RelatedLinks {
     pub related: Option<String>,
 }
+
+type WebhookLogRecord =
+    resource::Resource<WebhookLogRecordAttributes, WebhookLogRecordRelationships>;
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookLogRecordAttributes {}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookLogRecordRelationships {}
+
+type WebhookPing = resource::Resource<WebhookPingAttributes, WebhookPingRelationships>;
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPingAttributes {}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPingRelationships {}
 
 #[cfg(test)]
 mod test {

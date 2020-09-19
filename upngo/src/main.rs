@@ -31,7 +31,11 @@ enum Subcommand {
 /// Ping UpBank.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ping")]
-struct PingCommand {}
+struct PingCommand {
+    /// resource to ping.
+    #[argh(subcommand)]
+    resource: Option<PingResourceCommand>,
+}
 
 /// List a resource.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -223,6 +227,21 @@ struct RegisterWebhook {
     description: Option<String>,
 }
 
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+enum PingResourceCommand {
+    Webhook(PingWebhook),
+}
+
+/// Ping a webhook.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "webhook")]
+struct PingWebhook {
+    /// webhook ID to ping.
+    #[argh(positional)]
+    id: String,
+}
+
 fn default_url() -> String {
     "https://api.up.com.au/api/v1/".to_string()
 }
@@ -255,19 +274,40 @@ fn main() -> Result<()> {
         Get(get) => run_get(client, get),
         List(list) => run_list(client, list),
         Register(register) => run_register(client, register),
-        Ping(_) => run_ping(client),
+        Ping(ping) => run_ping(client, ping),
         Tag(tag) => run_tag(client, tag),
     }
 }
 
-fn run_ping(client: Client) -> Result<()> {
-    let resp = client.util.ping()?;
+fn run_ping(client: Client, ping: PingCommand) -> Result<()> {
+    if let Some(res) = ping.resource {
+        match res {
+            PingResourceCommand::Webhook(w) => run_ping_webhook(client, w),
+        }
+    } else {
+        let resp = client.util.ping()?;
+        match resp {
+            upbank::util::PingResponse::Ok(ping) => {
+                println!("UpBank is up {}", ping.meta.status_emoji);
+                Ok(())
+            }
+            upbank::util::PingResponse::Err(e) => Err(anyhow!("Failed to ping UpBank: {}", e)),
+        }
+    }
+}
+
+fn run_ping_webhook(client: Client, webhook: PingWebhook) -> Result<()> {
+    let resp = client
+        .webhook
+        .ping(&webhook.id)
+        .with_context(|| format!("Failed to ping webhook with ID {}", webhook.id))?;
+    use upbank::response::Response;
     match resp {
-        upbank::util::PingResponse::Ok(ping) => {
-            println!("UpBank is up {}", ping.meta.status_emoji);
+        Response::Ok(_) => {
+            println!("Webhook {} is up! 🚀", webhook.id);
             Ok(())
         }
-        upbank::util::PingResponse::Err(e) => Err(anyhow!("Failed to ping UpBank: {}", e)),
+        Response::Err(e) => Err(anyhow!("Failed to pring webhook {}: {}", webhook.id, e)),
     }
 }
 

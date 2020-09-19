@@ -8,6 +8,8 @@ pub enum ResourceType {
     WEBHOOKS,
     CATEGORIES,
     TAGS,
+    #[serde(rename = "webhook-events")]
+    WEBHOOKEVENTS,
 }
 
 #[derive(Deserialize, Debug)]
@@ -20,7 +22,7 @@ pub struct Resource<A, R> {
     pub attributes: A,
     #[serde(bound(deserialize = "R: Deserialize<'de>"))]
     pub relationships: R,
-    pub links: SelfLinks,
+    pub links: Option<SelfLinks>,
 }
 
 #[derive(Deserialize, Debug)]
