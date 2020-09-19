@@ -11,7 +11,7 @@ pub struct TransactionClient {
     token: String,
 }
 
-#[derive(Deserialize, Debug, Display, PartialEq)]
+#[derive(Deserialize, Debug, Display, PartialEq, Serialize, Clone)]
 pub enum Status {
     HELD,
     SETTLED,
@@ -203,6 +203,51 @@ pub struct ListRequestBuilder<'a> {
     tag: Option<String>,
 }
 
+enum ListParams {
+    Size(u32),
+    Status(Status),
+    Since(chrono::DateTime<chrono::Utc>),
+    Until(chrono::DateTime<chrono::Utc>),
+    Category(String),
+    Tag(String),
+}
+
+impl Serialize for ListParams {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut tu = serializer.serialize_tuple(2)?;
+        match self {
+            ListParams::Size(val) => {
+                tu.serialize_element("page[size]")?;
+                tu.serialize_element(val)?;
+            }
+            ListParams::Status(val) => {
+                tu.serialize_element("filter[status]")?;
+                tu.serialize_element(val)?;
+            }
+            ListParams::Since(val) => {
+                tu.serialize_element("filter[since]")?;
+                tu.serialize_element(val)?;
+            }
+            ListParams::Until(val) => {
+                tu.serialize_element("filter[until]")?;
+                tu.serialize_element(val)?;
+            }
+            ListParams::Category(val) => {
+                tu.serialize_element("filter[category]")?;
+                tu.serialize_element(val)?;
+            }
+            ListParams::Tag(val) => {
+                tu.serialize_element("filter[tag]")?;
+                tu.serialize_element(val)?;
+            }
+        };
+        tu.end()
+    }
+}
+
 impl<'a> ListRequestBuilder<'a> {
     setter!(size, u32);
     setter!(status, Status);
@@ -217,37 +262,27 @@ impl<'a> ListRequestBuilder<'a> {
         let mut query = vec![];
 
         if let Some(size) = self.size {
-            let value: String =
-                form_urlencoded::byte_serialize(size.to_string().as_bytes()).collect();
-            query.push(("page[size]", value))
+            query.push(ListParams::Size(size));
         }
 
         if let Some(status) = &self.status {
-            let value: String =
-                form_urlencoded::byte_serialize(status.to_string().as_bytes()).collect();
-            query.push(("filter[status]", value))
+            query.push(ListParams::Status(status.clone()));
         }
 
         if let Some(since) = self.since {
-            let value: String =
-                form_urlencoded::byte_serialize(since.to_rfc3339().as_bytes()).collect();
-            query.push(("filter[since]", value));
+            query.push(ListParams::Since(since))
         }
 
         if let Some(until) = self.until {
-            let value: String =
-                form_urlencoded::byte_serialize(until.to_rfc3339().as_bytes()).collect();
-            query.push(("filter[until]", value));
+            query.push(ListParams::Until(until));
         }
 
         if let Some(category) = &self.category {
-            let value: String = form_urlencoded::byte_serialize(category.as_bytes()).collect();
-            query.push(("filter[category]", value));
+            query.push(ListParams::Category(category.clone()));
         }
 
         if let Some(tag) = &self.tag {
-            let value: String = form_urlencoded::byte_serialize(tag.as_bytes()).collect();
-            query.push(("filter[tag]", value));
+            query.push(ListParams::Tag(tag.clone()));
         }
 
         debug!("Sending transaction list request to {}", url.to_string(),);

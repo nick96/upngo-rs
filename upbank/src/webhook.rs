@@ -38,6 +38,26 @@ pub struct ListRequestBuilder<'a> {
     size: Option<u32>,
 }
 
+enum ListParams {
+    PageSize(u32),
+}
+
+impl serde::Serialize for ListParams {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            ListParams::PageSize(size) => {
+                let mut tu = serializer.serialize_tuple(2)?;
+                tu.serialize_element("page[size]")?;
+                tu.serialize_element(size)?;
+                tu.end()
+            }
+        }
+    }
+}
+
 impl<'a> ListRequestBuilder<'a> {
     setter!(size, u32);
 
@@ -45,9 +65,7 @@ impl<'a> ListRequestBuilder<'a> {
         let url = self.base_url.clone();
         let mut query = vec![];
         if let Some(size) = self.size {
-            let value: String =
-                form_urlencoded::byte_serialize(size.to_string().as_bytes()).collect();
-            query.push(("filter[size]", value))
+            query.push(ListParams::PageSize(size));
         }
         debug!("Sending list webhook request to {}", url);
         let resp = self
