@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::option::Option;
-use thiserror::{Error};
+use thiserror::Error;
 
 #[derive(Deserialize, Debug)]
 pub struct Source {
@@ -73,10 +73,7 @@ pub enum ClientError {
 
     /// Conversion error.
     #[error("Failed to convert {value}: {reason}")]
-    ConversionError {
-        value: String,
-        reason: String
-    }
+    ConversionError { value: String, reason: String },
 }
 
 pub type Result<T> = std::result::Result<T, ClientError>;

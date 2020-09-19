@@ -1,7 +1,8 @@
 use crate::{error, resource, response, setter};
 use log::*;
+use serde::ser::{Serialize, SerializeTuple, Serializer};
 use serde::Deserialize;
-use url::{form_urlencoded, Url};
+use url::Url;
 
 pub struct WebhookClient {
     client: reqwest::blocking::Client,
@@ -93,8 +94,8 @@ pub struct RelatedLinks {
 #[cfg(test)]
 mod test {
     use super::Webhook;
-    use crate::test_deserialization;
     use crate::response::SuccessfulResponse;
+    use crate::test_deserialization;
 
     test_deserialization!(test_de, "webhook.json", Webhook);
     test_deserialization!(test_multi_de, "webhook_list.json", Vec<Webhook>);

@@ -1,8 +1,9 @@
 use crate::{currency, error, resource, response, setter};
 use log::*;
+use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
-use url::{form_urlencoded, Url};
+use url::Url;
 
 pub struct TransactionClient {
     client: reqwest::blocking::Client,
