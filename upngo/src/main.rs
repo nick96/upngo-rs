@@ -94,10 +94,10 @@ struct ListTransactions {
     status: Option<upbank::transaction::Status>,
     /// filter transactions since the given date.
     #[argh(option, short = 'a')]
-    since: Option<chrono::DateTime<chrono::Local>>,
+    since: Option<chrono::DateTime<chrono::Utc>>,
     /// filter transactions upto the given date.
     #[argh(option, short = 'b')]
-    until: Option<chrono::DateTime<chrono::Local>>,
+    until: Option<chrono::DateTime<chrono::Utc>>,
     /// filter by category.
     #[argh(option, short = 'c')]
     category: Option<String>,

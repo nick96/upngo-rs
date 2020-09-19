@@ -132,8 +132,8 @@ pub struct TransactionListRequestBuilder<'a> {
 
     size: Option<u32>,
     status: Option<transaction::Status>,
-    since: Option<chrono::DateTime<chrono::Local>>,
-    until: Option<chrono::DateTime<chrono::Local>>,
+    since: Option<chrono::DateTime<chrono::Utc>>,
+    until: Option<chrono::DateTime<chrono::Utc>>,
     category: Option<String>,
     tag: Option<String>,
 }
@@ -141,8 +141,8 @@ pub struct TransactionListRequestBuilder<'a> {
 impl<'a> TransactionListRequestBuilder<'a> {
     setter!(size, u32);
     setter!(status, transaction::Status);
-    setter!(since, chrono::DateTime<chrono::Local>);
-    setter!(until, chrono::DateTime<chrono::Local>);
+    setter!(since, chrono::DateTime<chrono::Utc>);
+    setter!(until, chrono::DateTime<chrono::Utc>);
     setter!(category, String);
     setter!(tag, String);
 

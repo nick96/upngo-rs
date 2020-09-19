@@ -196,8 +196,8 @@ pub struct ListRequestBuilder<'a> {
 
     size: Option<u32>,
     status: Option<Status>,
-    since: Option<chrono::DateTime<chrono::Local>>,
-    until: Option<chrono::DateTime<chrono::Local>>,
+    since: Option<chrono::DateTime<chrono::Utc>>,
+    until: Option<chrono::DateTime<chrono::Utc>>,
     category: Option<String>,
     tag: Option<String>,
 }
@@ -205,8 +205,8 @@ pub struct ListRequestBuilder<'a> {
 impl<'a> ListRequestBuilder<'a> {
     setter!(size, u32);
     setter!(status, Status);
-    setter!(since, chrono::DateTime<chrono::Local>);
-    setter!(until, chrono::DateTime<chrono::Local>);
+    setter!(since, chrono::DateTime<chrono::Utc>);
+    setter!(until, chrono::DateTime<chrono::Utc>);
     setter!(category, String);
     setter!(tag, String);
 

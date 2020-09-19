@@ -69,7 +69,7 @@ pub struct Attributes {
     pub url: String,
     pub description: Option<String>,
     pub secret_key: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Local>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Deserialize, Debug)]
