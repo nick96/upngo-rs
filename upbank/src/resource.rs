@@ -1,15 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum ResourceType {
-    TRANSACTIONS,
-    ACCOUNTS,
-    WEBHOOKS,
-    CATEGORIES,
-    TAGS,
-    #[serde(rename = "webhook-events")]
-    WEBHOOKEVENTS,
+    Transactions,
+    Accounts,
+    Webhooks,
+    Categories,
+    Tags,
+    WebhookEvents,
+    WebhookDeliveryLogs,
 }
 
 #[derive(Deserialize, Debug)]

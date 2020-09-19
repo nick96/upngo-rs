@@ -26,6 +26,7 @@ enum Subcommand {
     Register(RegisterCommand),
     Ping(PingCommand),
     Tag(TagCommand),
+    ListLogs(ListLogCommand),
 }
 
 /// Ping UpBank.
@@ -53,6 +54,15 @@ struct TagCommand {
     /// resource to tag.
     #[argh(subcommand)]
     resource: TagResourceCommand,
+}
+
+/// List logs.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "logs")]
+struct ListLogCommand {
+    /// resource to list logs of.
+    #[argh(subcommand)]
+    resource: ListLogResourceCommand,
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -84,6 +94,12 @@ enum ListResourceCommand {
     Categories(ListCategories),
     Tags(ListTags),
     Webhooks(ListWebhooks),
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+enum ListLogResourceCommand {
+    Webhooks(ListWebhookLogs),
 }
 
 /// List transactions.
@@ -141,6 +157,19 @@ struct ListTags {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "webhooks")]
 struct ListWebhooks {
+    /// max number of webhooks to list.
+    #[argh(option, short = 'n')]
+    size: Option<u32>,
+}
+
+/// List webhook logs.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "webhook")]
+struct ListWebhookLogs {
+    /// id of the webhook to get the logs for.
+    #[argh(positional)]
+    id: String,
+
     /// max number of webhooks to list.
     #[argh(option, short = 'n')]
     size: Option<u32>,
@@ -276,6 +305,7 @@ fn main() -> Result<()> {
         Register(register) => run_register(client, register),
         Ping(ping) => run_ping(client, ping),
         Tag(tag) => run_tag(client, tag),
+        ListLogs(logs) => run_list_logs(client, logs),
     }
 }
 
@@ -585,6 +615,53 @@ fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
     }
 }
 
+fn run_list_logs(client: Client, logs: ListLogCommand) -> Result<()> {
+    use ListLogResourceCommand::*;
+    match logs.resource {
+        Webhooks(webhooks) => run_list_webhook_logs(client, webhooks),
+    }
+}
+
+fn run_list_webhook_logs(client: Client, webhooks: ListWebhookLogs) -> Result<()> {
+    let mut req = client.webhook.logs(&webhooks.id);
+    if let Some(size) = webhooks.size {
+        req.size(size);
+    }
+    let resp = req
+        .exec()
+        .with_context(|| format!("Failed to get logs for webhook with ID {}", webhooks.id))?;
+    use upbank::response::Response;
+    match resp {
+        Response::Ok(w) => {
+            let mut table = table!([
+                "Time",
+                "Request",
+                "Response Code",
+                "Response",
+                "Status",
+                "ID"
+            ]);
+            for record in w.data {
+                table.add_row(row![
+                    record.attributes.created_at,
+                    truncate(record.attributes.request.body, 10),
+                    record.attributes.response.status_code,
+                    truncate(record.attributes.response.body, 10),
+                    record.attributes.delivery_status,
+                    record.id
+                ]);
+            }
+            table.printstd();
+            Ok(())
+        }
+        Response::Err(e) => Err(anyhow!(
+            "Failed to get logs for webhook with ID {}: {}",
+            webhooks.id,
+            e
+        )),
+    }
+}
+
 fn run_register(client: Client, register: RegisterCommand) -> Result<()> {
     unimplemented!()
 }
@@ -610,5 +687,16 @@ fn run_tag_transaction(client: Client, tag: TagTransaction) -> Result<()> {
             .transaction
             .tag(&id, tags.clone())
             .with_context(|| format!("Failed to add tags {:?} on transaction {}", tags, id))
+    }
+}
+
+fn truncate(msg: String, max_length: usize) -> String {
+    if msg.len() <= max_length {
+        msg
+    } else {
+        let mut truncated = msg;
+        truncated.truncate(max_length);
+        truncated.push_str("...");
+        truncated
     }
 }

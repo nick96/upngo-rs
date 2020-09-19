@@ -1,7 +1,8 @@
 use crate::{error, resource, response, setter};
 use log::*;
-use serde::ser::{Serialize, SerializeTuple, Serializer};
-use serde::Deserialize;
+use serde::ser::SerializeTuple;
+use serde::{Deserialize, Serialize};
+use strum_macros::Display;
 use url::Url;
 
 pub struct WebhookClient {
@@ -184,9 +185,35 @@ pub struct RelatedLinks {
 type WebhookLogRecord =
     resource::Resource<WebhookLogRecordAttributes, WebhookLogRecordRelationships>;
 
+#[derive(Deserialize, Debug, Display)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WebhookDeliveryStatus {
+    Delivered,
+    Undeliverable,
+    BadResponseCode,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct WebhookLogRecordAttributes {}
+pub struct WebhookLogRecordAttributes {
+    pub request: WebhookLogRequest,
+    pub response: WebhookLogResponse,
+    pub delivery_status: WebhookDeliveryStatus,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookLogRequest {
+    pub body: String,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookLogResponse {
+    pub status_code: u32,
+    pub body: String,
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -194,13 +221,46 @@ pub struct WebhookLogRecordRelationships {}
 
 type WebhookPing = resource::Resource<WebhookPingAttributes, WebhookPingRelationships>;
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct WebhookPingAttributes {}
+#[derive(Serialize, Deserialize, Debug, Display)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum EventType {
+    TransactionCreated,
+    TransactionSettled,
+    TransactionDeleted,
+    Ping,
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct WebhookPingRelationships {}
+pub struct WebhookPingAttributes {
+    pub event_type: EventType,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPingRelationships {
+    pub webhook: Relationship,
+    pub transaction: Option<Relationship>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct DataContainer<T> {
+    #[serde(bound(deserialize = "T: Deserialize<'de>"))]
+    data: T,
+    links: Option<RelatedLinks>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TypeAndId {
+    #[serde(rename = "type")]
+    pub resource_type: resource::ResourceType,
+    pub id: String,
+}
+
+pub type Relationship = DataContainer<TypeAndId>;
 
 #[cfg(test)]
 mod test {

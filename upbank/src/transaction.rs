@@ -174,7 +174,7 @@ impl TransactionClient {
             data: tags
                 .iter()
                 .map(|t| TagInputResource {
-                    resource_type: resource::ResourceType::TAGS,
+                    resource_type: resource::ResourceType::Tags,
                     id: t.clone(),
                 })
                 .collect(),
