@@ -27,6 +27,7 @@ enum Subcommand {
     Ping(PingCommand),
     Tag(TagCommand),
     ListLogs(ListLogCommand),
+    Delete(DeleteCommand),
 }
 
 /// Ping UpBank.
@@ -63,6 +64,15 @@ struct ListLogCommand {
     /// resource to list logs of.
     #[argh(subcommand)]
     resource: ListLogResourceCommand,
+}
+
+/// Delete a resource.
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "delete")]
+struct DeleteCommand {
+    /// resource to delte.
+    #[argh(subcommand)]
+    resource: DeleteResourceCommand,
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -271,6 +281,21 @@ struct PingWebhook {
     id: String,
 }
 
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+enum DeleteResourceCommand {
+    Webhook(DeleteWebhookCommand),
+}
+
+/// Delete a webhook
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "webhook")]
+struct DeleteWebhookCommand {
+    /// id of the webhook to delete.
+    #[argh(positional)]
+    id: String,
+}
+
 fn default_url() -> String {
     "https://api.up.com.au/api/v1/".to_string()
 }
@@ -306,6 +331,7 @@ fn main() -> Result<()> {
         Ping(ping) => run_ping(client, ping),
         Tag(tag) => run_tag(client, tag),
         ListLogs(logs) => run_list_logs(client, logs),
+        Delete(delete) => run_delete(client, delete),
     }
 }
 
@@ -688,6 +714,22 @@ fn run_tag_transaction(client: Client, tag: TagTransaction) -> Result<()> {
             .tag(&id, tags.clone())
             .with_context(|| format!("Failed to add tags {:?} on transaction {}", tags, id))
     }
+}
+
+fn run_delete(client: Client, delete: DeleteCommand) -> Result<()> {
+    use DeleteResourceCommand::*;
+    match delete.resource {
+        Webhook(webhook) => run_delete_webhook(client, webhook),
+    }
+}
+
+fn run_delete_webhook(client: Client, webhook: DeleteWebhookCommand) -> Result<()> {
+    client
+        .webhook
+        .delete(&webhook.id)
+        .with_context(|| format!("Failed to delete webhook {}", webhook.id))?;
+    println!("Delete webhook {}", webhook.id);
+    Ok(())
 }
 
 fn truncate(msg: String, max_length: usize) -> String {

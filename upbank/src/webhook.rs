@@ -67,6 +67,14 @@ impl WebhookClient {
             size: None,
         }
     }
+
+    pub fn delete(&self, id: &str) -> error::Result<()> {
+        let url = self.base_url.join(id)?;
+        debug!("Sending delete webhook request to {}", url.to_string());
+        let resp = self.client.delete(url).bearer_auth(&self.token).send()?;
+        trace!("Delete webhook request responded with {:?}", resp);
+        Ok(())
+    }
 }
 
 pub struct LogListRequestBuilder<'a> {
