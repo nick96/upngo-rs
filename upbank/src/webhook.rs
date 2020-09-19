@@ -28,6 +28,19 @@ impl WebhookClient {
             size: None,
         }
     }
+
+    pub fn get(&self, id: &str) -> error::Result<response::Response<Webhook>> {
+        let url = self.base_url.join(id)?;
+        debug!("Sending webhook get request to {}", url.to_string());
+        let resp = self
+            .client
+            .get(url)
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<Webhook>>()?;
+        trace!("Webhook get request responded with {:?}", resp);
+        Ok(resp)
+    }
 }
 
 pub struct ListRequestBuilder<'a> {

@@ -190,7 +190,11 @@ struct GetCategory {
 /// Get a webhook.
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "webhook")]
-struct GetWebhook {}
+struct GetWebhook {
+    /// id of the webhook to get.
+    #[argh(positional)]
+    id: String,
+}
 
 /// Register a resource.
 #[derive(FromArgs, PartialEq, Debug)]
@@ -337,7 +341,34 @@ fn run_get_transaction(client: Client, transaction: GetTransaction) -> Result<()
 }
 
 fn run_get_webhook(client: Client, webhook: GetWebhook) -> Result<()> {
-    unimplemented!()
+    let resp = client
+        .webhook
+        .get(&webhook.id)
+        .with_context(|| format!("Failed to get webhook with ID {}", webhook.id))?;
+    use upbank::response::Response;
+    match resp {
+        Response::Ok(w) => {
+            let attrs = w.data.attributes;
+            let table = table!(
+                ["Description", "URL", "Created", "ID"],
+                [
+                    attrs
+                        .description
+                        .map_or("None".to_string(), std::convert::identity),
+                    attrs.url,
+                    attrs.created_at,
+                    w.data.id
+                ]
+            );
+            table.printstd();
+            Ok(())
+        }
+        Response::Err(e) => Err(anyhow!(
+            "Failed to get webhook with ID {}:\n{}",
+            &webhook.id,
+            e
+        )),
+    }
 }
 
 fn run_get_category(client: Client, category: GetCategory) -> Result<()> {
@@ -495,7 +526,7 @@ fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
     match resp {
         upbank::response::Response::Ok(webhooks) => {
             let mut table = Table::new();
-            table.add_row(row!["Description", "URL", "Created",]);
+            table.add_row(row!["Description", "URL", "Created", "ID"]);
             for webhook in webhooks.data {
                 table.add_row(row![
                     webhook.attributes.url,
@@ -504,6 +535,7 @@ fn run_list_webhooks(client: Client, webhooks: ListWebhooks) -> Result<()> {
                         .description
                         .map_or_else(|| "N/A".to_string(), std::convert::identity),
                     webhook.attributes.created_at,
+                    webhook.id,
                 ]);
             }
             table.printstd();
