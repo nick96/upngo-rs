@@ -1,8 +1,10 @@
 [package]
 name = "upngo"
-version = "0.1.0"
-authors = ["Nick Spain <nicholas.spain@stileeducation.com>"]
+version = "0.0.1"
+authors = ["Nick Spain <nicholas.spain96@gmail.com>"]
 edition = "2018"
+keywords = ["open-banking", "cli", "upbank"]
+
 
 [dependencies]
 argh = "0.1.3"
