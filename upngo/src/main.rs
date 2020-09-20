@@ -689,7 +689,31 @@ fn run_list_webhook_logs(client: Client, webhooks: ListWebhookLogs) -> Result<()
 }
 
 fn run_register(client: Client, register: RegisterCommand) -> Result<()> {
-    unimplemented!()
+    use RegisterResourceCommand::*;
+    match register.resource {
+        Webhook(webhook) => run_register_webhook(client, webhook),
+    }
+}
+
+fn run_register_webhook(client: Client, webhook: RegisterWebhook) -> Result<()> {
+    let w = upbank::webhook::Webhook::new(webhook.url, webhook.description);
+    let resp = client.webhook.register(&w)?;
+    use upbank::response::Response;
+    match resp {
+        Response::Ok(new_webhook) => {
+            let table = table!(
+                ["URL", "Description", "Secret Key"],
+                [
+                    new_webhook.data.attributes.url,
+                    new_webhook.data.attributes.description.map_or("None".to_string(), std::convert::identity),
+                    new_webhook.data.attributes.secret_key.expect("Secret key must be provided on registration")
+                ]
+            );
+            table.printstd();
+            Ok(())
+        }
+        Response::Err(e) => Err(anyhow!("Failed to create webhook {:?}: {}", w, e)),
+    }
 }
 
 fn run_tag(client: Client, tag: TagCommand) -> Result<()> {

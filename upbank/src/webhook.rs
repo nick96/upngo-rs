@@ -1,6 +1,6 @@
 use crate::{error, resource, response, setter};
 use log::*;
-use serde::ser::SerializeTuple;
+use serde::ser::{SerializeStruct, SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use url::Url;
@@ -30,7 +30,7 @@ impl WebhookClient {
         }
     }
 
-    pub fn get(&self, id: &str) -> error::Result<response::Response<Webhook>> {
+    pub fn get(&self, id: &str) -> error::Result<response::Response<WebhookResponse>> {
         let url = self.base_url.join(id)?;
         debug!("Sending webhook get request to {}", url.to_string());
         let resp = self
@@ -38,7 +38,7 @@ impl WebhookClient {
             .get(url)
             .bearer_auth(&self.token)
             .send()?
-            .json::<response::Response<Webhook>>()?;
+            .json::<response::Response<WebhookResponse>>()?;
         trace!("Webhook get request responded with {:?}", resp);
         Ok(resp)
     }
@@ -74,6 +74,23 @@ impl WebhookClient {
         let resp = self.client.delete(url).bearer_auth(&self.token).send()?;
         trace!("Delete webhook request responded with {:?}", resp);
         Ok(())
+    }
+
+    pub fn register(&self, webhook: &Webhook) -> error::Result<response::Response<WebhookResponse>> {
+        debug!(
+            "Sending create webhook request to {}",
+            self.base_url.to_string()
+        );
+        let webhook_ser = serde_json::to_string(webhook)?;
+        let resp = self
+            .client
+            .post(self.base_url.clone())
+            .body(webhook_ser)
+            .bearer_auth(&self.token)
+            .send()?
+            .json::<response::Response<WebhookResponse>>()?;
+        trace!("Create webhook request responded with {:?}", resp);
+        Ok(resp)
     }
 }
 
@@ -117,7 +134,7 @@ impl serde::Serialize for ListParams {
 impl<'a> ListRequestBuilder<'a> {
     setter!(size, u32);
 
-    pub fn exec(&self) -> error::Result<response::Response<Vec<Webhook>>> {
+    pub fn exec(&self) -> error::Result<response::Response<Vec<WebhookResponse>>> {
         let url = self.base_url.clone();
         let mut query = vec![];
         if let Some(size) = self.size {
@@ -130,7 +147,7 @@ impl<'a> ListRequestBuilder<'a> {
             .bearer_auth(&self.token)
             .query(&query)
             .send()?
-            .json::<response::Response<Vec<Webhook>>>()?;
+            .json::<response::Response<Vec<WebhookResponse>>>()?;
         trace!("Webhook list webhook request responded with: {:?}", resp);
         Ok(resp)
     }
@@ -161,7 +178,38 @@ impl<'a> LogListRequestBuilder<'a> {
     }
 }
 
-pub type Webhook = resource::Resource<Attributes, Relationships>;
+pub type WebhookResponse = resource::Resource<Attributes, Relationships>;
+
+pub type Webhook = DataContainer<SettableAttributes>;
+
+// Only implement serialize for webhook because not all DataContainers need to
+// be serializable.
+impl Serialize for Webhook {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("Webhook", 1)?;
+        s.serialize_field("data", &self.data)?;
+        s.end()
+    }
+}
+
+impl Webhook {
+    pub fn new(url: String, description: Option<String>) -> Self {
+        Self {
+            data: SettableAttributes { url, description },
+            links: None,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SettableAttributes {
+    pub url: String,
+    pub description: Option<String>,
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
