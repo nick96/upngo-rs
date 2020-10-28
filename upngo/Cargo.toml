@@ -7,7 +7,7 @@ keywords = ["open-banking", "cli", "upbank"]
 
 
 [dependencies]
-argh = "0.1.3"
+argh = "0.1.4"
 upbank = { path = "../upbank" }
 url = "2.1.1"
 prettytable-rs = "0.8.0"
